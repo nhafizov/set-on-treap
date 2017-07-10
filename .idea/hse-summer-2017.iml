@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/test.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/my_set.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/my_set.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />

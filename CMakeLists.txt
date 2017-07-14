@@ -3,5 +3,5 @@ project(hse_summer_2017)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp my_set.h treap.cpp test.h test.cpp my_set.cpp)
+set(SOURCE_FILES main.cpp my_set.h test.h test.cpp treap.h)
 add_executable(hse_summer_2017 ${SOURCE_FILES})

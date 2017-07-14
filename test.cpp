@@ -1,8 +1,6 @@
 #include "test.h"
 #include "treap.cpp"
 
-#pragma once
-
 void test_treap() {
     treap<int> treap;
     treap.insert(50);

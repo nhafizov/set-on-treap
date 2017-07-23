@@ -10,6 +10,46 @@ class my_set {
     treap<T> treap;
     size_t _size = 0;
 
+    // Iterators
+ public:
+    class iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
+     public:
+        Node *current;
+
+     public:
+        iterator(Node *node) : current(node) {}
+
+        bool operator==(iterator const &other) const { return current == other.current; }
+
+        bool operator!=(iterator const &other) const { return !(*this == other); }
+
+        iterator &operator++() {
+            current = current->right;
+            return *this;
+        }
+
+        iterator &operator--() {
+            current = current->left;
+            return *this;
+        }
+
+        iterator operator++(int) {
+            iterator result(*this);
+            ++(*this);
+            return result;
+        }
+
+        iterator operator--(int) {
+            iterator result(*this);
+            --(*this);
+            return result;
+        }
+
+        T &operator*() const { return static_cast<Node *>(current)->data; }
+
+        T *operator->() const { return &(static_cast<Node *>(current)->data); }
+    };
+
  public:
     // member types
     using key_type = T;
@@ -20,9 +60,9 @@ class my_set {
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     // member functions
-    my_set();
+    my_set() {}
 
-    explicit my_set(const my_set &other);
+    explicit my_set(const my_set &other) : treap(other.treap) {}
 
     explicit my_set(my_set &&other) {
         treap.root = other.treap.root;
@@ -35,7 +75,10 @@ class my_set {
         clear();
     }
 
-    my_set &operator=(const my_set &other);
+    my_set &operator=(const my_set &other) {
+        treap = other.treap;
+        return *this;
+    }
 
     my_set &operator=(my_set &&other) {
         treap.root = other.treap.root;
@@ -46,13 +89,25 @@ class my_set {
     my_set &operator=(std::initializer_list<value_type> ilist);
 
     // iterators
-    iterator begin() noexcept;
+    iterator begin() noexcept {
+        auto cnt = treap.root;
+        while (cnt && cnt->left) {
+            cnt = cnt->left;
+        }
+        return iterator(cnt);
+    }
 
     const_iterator begin() const noexcept;
 
     const_iterator cbegin() const noexcept;
 
-    iterator end() noexcept;
+    iterator end() noexcept {
+        auto cnt = treap.root;
+        while (cnt && cnt->right) {
+            cnt = cnt->right;
+        }
+        return cnt;
+    }
 
     const_iterator end() const noexcept;
 
@@ -80,9 +135,15 @@ class my_set {
     }
 
     // modifiers
-    void clear() noexcept;
+    void clear() noexcept {
+        _size = 0;
+        treap.clear();
+    };
 
-    std::pair<iterator, bool> insert(const value_type &value);
+    std::pair<iterator, bool> insert(const value_type &value) {
+        ++_size;
+        treap.insert(value);
+    }
 
     std::pair<iterator, bool> insert(value_type &&value);
 
@@ -91,7 +152,10 @@ class my_set {
     iterator insert(const_iterator hint, value_type &&value);
 
     template<class InputIt>
-    void insert(InputIt first, InputIt last);
+    void insert(InputIt first, InputIt last) {
+        while (first++ != last)
+            treap.insert(*first);
+    }
 
     void insert(std::initializer_list<value_type> ilist);
 
@@ -101,18 +165,24 @@ class my_set {
     template<class... Args>
     iterator emplace_hint(const_iterator hint, Args &&... args);
 
-    iterator erase(const_iterator pos);
+    iterator erase(const_iterator pos) {
+        treap.erase(pos);
+    }
 
     iterator erase(const_iterator first, const_iterator last);
 
     size_t erase(const key_type &key);
 
-    void swap(my_set &other);
+    void swap(my_set &other) {
+        std::swap(treap.root, other.treap.root);
+    }
 
     // lookup
-    size_t count(const T &key) const;
+    size_t count(const T &key) const {
+        return 1 ? treap.search(key) != nullptr ? 0;
+    }
 
-    iterator find(const T &key);
+    iterator find(const T &key) {}
 
     const_iterator find(const T &key) const;
 
@@ -139,15 +209,21 @@ class my_set {
 // non-member functions
 template<class Key, class Compare>
 bool operator==(const my_set<Key, Compare> &lhs,
-                const my_set<Key, Compare> &rhs);
+                const my_set<Key, Compare> &rhs) {
+    return lhs.treap.root == rhs.treap.root;
+};
 
 template<class Key, class Compare, class Alloc>
 bool operator!=(const my_set<Key, Compare> &lhs,
-                const my_set<Key, Compare> &rhs);
+                const my_set<Key, Compare> &rhs) {
+    return lhs.treap.root != rhs.treap.root;
+};
 
 template<class Key, class Compare>
 bool operator<(const my_set<Key, Compare> &lhs,
-               const my_set<Key, Compare> &rhs);
+               const my_set<Key, Compare> &rhs) {
+
+};
 
 template<class Key, class Compare>
 bool operator<=(const my_set<Key, Compare> &lhs,
@@ -163,4 +239,6 @@ bool operator>=(const my_set<Key, Compare> &lhs,
 
 template<class Key, class Compare, class Alloc>
 void swap(my_set<Key, Compare> &lhs,
-          my_set<Key, Compare> &rhs);
+          my_set<Key, Compare> &rhs) {
+    lhs.swap(rhs);
+};

@@ -10,46 +10,6 @@ class my_set {
     treap<T> treap;
     size_t _size = 0;
 
-    // Iterators
- public:
-    class iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
-     public:
-        Node *current;
-
-     public:
-        iterator(Node *node) : current(node) {}
-
-        bool operator==(iterator const &other) const { return current == other.current; }
-
-        bool operator!=(iterator const &other) const { return !(*this == other); }
-
-        iterator &operator++() {
-            current = current->right;
-            return *this;
-        }
-
-        iterator &operator--() {
-            current = current->left;
-            return *this;
-        }
-
-        iterator operator++(int) {
-            iterator result(*this);
-            ++(*this);
-            return result;
-        }
-
-        iterator operator--(int) {
-            iterator result(*this);
-            --(*this);
-            return result;
-        }
-
-        T &operator*() const { return static_cast<Node *>(current)->data; }
-
-        T *operator->() const { return &(static_cast<Node *>(current)->data); }
-    };
-
  public:
     // member types
     using key_type = T;
@@ -179,7 +139,7 @@ class my_set {
 
     // lookup
     size_t count(const T &key) const {
-        return 1 ? treap.search(key) != nullptr ? 0;
+        return 1 ? treap.search(key) != nullptr : 0;
     }
 
     iterator find(const T &key) {}

@@ -4,4 +4,6 @@
 
 void test_treap();
 
+void test_iterators();
+
 void test_set();

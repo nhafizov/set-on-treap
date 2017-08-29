@@ -1,6 +1,7 @@
 #include <initializer_list>
 #include <memory>
 #include "treap.h"
+#include <set>
 
 #pragma once
 
@@ -16,8 +17,6 @@ class my_set {
     using value_type = T;
     using iterator = std::iterator<std::bidirectional_iterator_tag, T>;
     using const_iterator = std::iterator<std::bidirectional_iterator_tag, const T>;
-    using reverse_iterator = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     // member functions
     my_set() {}
@@ -46,15 +45,15 @@ class my_set {
         return *this;
     }
 
-    my_set &operator=(std::initializer_list<value_type> ilist);
+    my_set &operator=(std::initializer_list<value_type> ilist) {
+        clear();
+        insert(ilist.begin(), ilist.end());
+        return *this;
+    }
 
     // iterators
     iterator begin() noexcept {
-        auto cnt = treap.root;
-        while (cnt && cnt->left) {
-            cnt = cnt->left;
-        }
-        return iterator(cnt);
+        return treap.begin();
     }
 
     const_iterator begin() const noexcept;
@@ -62,28 +61,12 @@ class my_set {
     const_iterator cbegin() const noexcept;
 
     iterator end() noexcept {
-        auto cnt = treap.root;
-        while (cnt && cnt->right) {
-            cnt = cnt->right;
-        }
-        return cnt;
+        return treap.end();
     }
 
     const_iterator end() const noexcept;
 
     const_iterator cend() const noexcept;
-
-    reverse_iterator rbegin() noexcept;
-
-    const_reverse_iterator rbegin() const noexcept;
-
-    const_reverse_iterator crbegin() const noexcept;
-
-    reverse_iterator rend() noexcept;
-
-    const_reverse_iterator rend() const noexcept;
-
-    const_reverse_iterator crend() const;
 
     // capacity
     bool empty() const noexcept {
@@ -102,12 +85,15 @@ class my_set {
 
     std::pair<iterator, bool> insert(const value_type &value) {
         ++_size;
-        treap.insert(value);
+        return treap.insert(value);
     }
 
-    std::pair<iterator, bool> insert(value_type &&value);
+    std::pair<iterator, bool> insert(value_type &&value) {
+        ++_size;
+        return treap.insert(std::move(value));
+    };
 
-    iterator insert(const_iterator hint, const value_type &value);
+    iterator insert(const_iterator hint, const value_type &value) {}
 
     iterator insert(const_iterator hint, value_type &&value);
 
@@ -117,19 +103,19 @@ class my_set {
             treap.insert(*first);
     }
 
-    void insert(std::initializer_list<value_type> ilist);
-
-    template<class... Args>
-    std::pair<iterator, bool> emplace(Args &&... args);
-
-    template<class... Args>
-    iterator emplace_hint(const_iterator hint, Args &&... args);
+    void insert(std::initializer_list<value_type> ilist) {
+        treap.insert(ilist.begin(), ilist.end());
+    }
 
     iterator erase(const_iterator pos) {
         treap.erase(pos);
     }
 
-    iterator erase(const_iterator first, const_iterator last);
+    iterator erase(const_iterator first, const_iterator last) {
+        while (first++ != last) {
+            treap.erase(first);
+        }
+    }
 
     size_t erase(const key_type &key);
 

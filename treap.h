@@ -1,14 +1,15 @@
 #include <cstddef>
 #include <random>
 #include <iostream>
-
+#include <stack>
+// Добавить insert(begin, end);
 #pragma once
 
 const size_t mod = 32416187567;
 
 template<typename T>
 struct Node {
-    T data;
+    T data = NULL;
     size_t prior = 0;
     Node *left = nullptr;
     Node *right = nullptr;
@@ -18,7 +19,8 @@ struct Node {
 
     Node(T _data, size_t _prior = ((rand() << 15) + rand()) % mod) : data(_data), prior(_prior) {}
 
-    Node(Node *other) : data(other->data), prior(other->prior), left(other->left), right(other->right) {}
+    Node(Node *other) : data(other->data), prior(other->prior), left(other->left), right(other->right),
+                        parent(other->parent) {}
 };
 
 template<typename T>
@@ -66,6 +68,15 @@ class treap {
         } else {
             insert(elem->data < _root->data ? _root->left : _root->right, elem);
         }
+        inOrderParentProblem(_root, nullptr);
+    }
+
+    void inOrderParentProblem(Node<T> *_root, Node<T> *__root) {
+        if (_root) {
+            inOrderParentProblem(_root->left, _root);
+            _root->parent = __root;
+            inOrderParentProblem(_root->right, _root);
+        }
     }
 
     void split(Node<T> *_root, T &data, Node<T> *&left, Node<T> *&right) {
@@ -73,14 +84,27 @@ class treap {
             left = nullptr;
             right = nullptr;
         } else if (data < _root->data) {
-            split(_root->left, data, left, _root->left);
-            if (left->parent)
-                left->parent = _root;
+            split(_root->left, data, left, _root->left, _root);
             right = _root;
         } else {
-            split(_root->right, data, _root->right, right);
-            if (right->parent)
-                left->parent = _root;
+            split(_root->right, data, _root->right, right, _root);
+            left = _root;
+        }
+    }
+
+    void split(Node<T> *_root, T &data, Node<T> *&left, Node<T> *&right, Node<T> *__root) {
+        if (!_root) {
+            left = nullptr;
+            right = nullptr;
+        } else if (data < _root->data) {
+            if (left && left->parent)
+                left->parent = __root;
+            split(_root->left, data, left, _root->left, __root);
+            right = _root;
+        } else {
+            if (right && right->parent)
+                right->parent = __root;
+            split(_root->right, data, _root->right, right, __root);
             left = _root;
         }
     }
@@ -93,7 +117,6 @@ class treap {
     }
 
     void merge(Node<T> *&_root, Node<T> *&left, Node<T> *&right) {
-        auto __root = _root;
         if (!left || !right) {
             _root = left ? left : right;
         } else if (left->prior > right->prior) {
@@ -103,10 +126,6 @@ class treap {
             merge(right->left, left, right->left);
             _root = right;
         }
-        if (_root && _root->left)
-            _root->left->parent = __root;
-        if (_root && _root->right)
-            _root->right->parent = __root;
     }
 
     ~treap() {
@@ -144,6 +163,8 @@ class treap {
             inOrder(_root->left);
             std::cout << "key: " << _root->data << " | priority: %d "
                       << _root->prior;
+            if (_root->parent)
+                std::cout << " | parent: " << _root->parent->data;
             if (_root->left)
                 std::cout << " | left child: " << _root->left->data;
             if (_root->right)
@@ -185,7 +206,8 @@ class treap {
      public:
         iterator() {}
 
-        iterator(Node<T> *node) : current(node) {}
+        iterator(Node<T> *node) : current(node) {
+        }
 
         iterator &operator=(const iterator &other) {
             std::move(current);
@@ -197,71 +219,14 @@ class treap {
 
         bool operator!=(iterator const &other) const { return current != other.current; }
 
-        iterator &operator++() {
-            if (current->right != nullptr) {
-                current = current->right;
-                while (current->left != nullptr) {
-                    current = current->left;
-                }
-            } else {
-                while (current->parent != nullptr && current->parent->right == current) {
-                    current = current->parent;
-                }
-                if (current->parent != nullptr)
-                    current = current->parent;
-            }
-            return *this;
-        }
+        T &operator*() const { return static_cast<Node<T> *>(current)->data; }
 
-        Node<T> *parent() {
-            if (current && current->parent)
-                return current->parent;
-        }
-
-        iterator &operator--() {
-//            Node<T> *parent;
-//
-//            if (this->current == nullptr) {
-//                /* '-> begin iterator does not decrement */
-//                return *this;
-//            }
-//            parent = this->current->parent;
-//            /*
-//             * reaches root -> next is end()
-//             */
-//            if (parent == nullptr) {
-//                this->current = nullptr;
-//                return *this;
-//            }
-//
-//            /*
-//             * left child -> go to right child
-//             * right child -> go to parent
-//             */
-//            if ((this->current == parent->left) && (parent->right != nullptr)) {
-//                this->current = parent->right;
-//            } else {
-//                this->current = this->current->parent;
-//                return *this;
-//            }
-//            while (true) {
-//                if (this->current->left != nullptr) {
-//                    /* '-> has left child node */
-//                    this->current = this->current->left;
-//                } else if (this->current->right != nullptr) {
-//                    /* '-> only right child node */
-//                    this->current = this->current->right;
-//                } else {
-//                    /* '-> has no children -> stop here */
-//                    return *this;
-//                }
-//            }
-        }
+        T *operator->() const { return &(static_cast<Node<T> *>(current)->data); }
 
         const iterator &operator++(int) {
-            iterator result(*this);
+            iterator old = *this;
             ++(*this);
-            return result;
+            return old;
         }
 
         const iterator &operator--(int) {
@@ -270,9 +235,92 @@ class treap {
             return result;
         }
 
-        T &operator*() const { return static_cast<Node<T> *>(current)->data; }
+        iterator &operator++() {
+            if (current == nullptr) {
+                return *this;
+            }
+            Node<T> *n;
+            if (current->left != nullptr) {
+                /* '-> has left child node -> visit always */
+                current = current->left;
+            } else if (current->right != nullptr) {
+                /* '-> only right child node -> visit always */
+                current = current->right;
+            } else {
+                n = current;
+                while (true) {
+                    /* '-> traverse back until node with unvisited right neighbor or root */
+                    if (n->parent == nullptr) {
+                        current = nullptr;
+                        break;
+                    } else if (n == n->parent->left && n->parent->right != nullptr) {
+                        current = n->parent->right;
+                        break;
+                    } else {
+                        n = n->parent;
+                    }
+                }
+            }
+            return *this;
+        }
 
-        T *operator->() const { return &(static_cast<Node<T> *>(current)->data); }
+        iterator &operator--() {
+        }
+
+        void Increment() {
+            if (current == nullptr) {
+                return;
+            }
+            // now we have a valid navigator
+            if (current.HasRightChild())
+                // slide down the left subtree of right child
+            {
+                current++;
+                while (current.HasLeftChild())
+                    +current;
+            } else
+                // back up to first ancestor not already visited
+                // as long as we are parent's right child, then parent has been visited
+            {
+                bool navWasRightChild;
+                do {
+                    navWasRightChild = current.IsRightChild();
+                    --current;
+                } while (navWasRightChild);
+            }
+        }
+
+        void Decrement() {
+            if (current) {
+                // note: -- on first element is undefined => we may safely move up if not left
+                if (current == current->parent->arg_first()) {
+                    // current is first child => move up
+                    current = current->parent;
+                } else {
+                    // current is not first child => move up one step, then traverse down
+                    // find pointer from parent
+                    auto prev = --current->parent->arg_end();
+                    for (; *prev != current; --prev);
+                    --prev; // previous from current (prev can't be argv.front())
+                    current = *prev;
+                    // Now traverse down right most
+                    while (!current->is_leaf()) current = current->arg_last();
+                }
+            } else {
+                // current at end, so we need to use root to get to last element
+                for (current = root; !current->is_leaf();) {
+                    current = current->arg_last();
+                }
+            }
+            return *this;
+        }
+
+        bool HasRightChild() const {
+            if (current && current->right != 0)
+                return 1;
+            return 0;
+        }
+
     };
 
     iterator begin() noexcept {
@@ -286,4 +334,4 @@ class treap {
     iterator end() noexcept {
         return iterator(nullptr);
     }
-};
+}

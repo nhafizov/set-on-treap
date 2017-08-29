@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stack>
 // Добавить insert(begin, end);
+// Разобраться с postfix inc/decrement
 #pragma once
 
 const size_t mod = 32416187567;
@@ -27,6 +28,7 @@ template<typename T>
 class treap {
  private:
     Node<T> *root = nullptr;
+    Node<T> *nil = nullptr;
 
     static void destroyNode(Node<T> *node) {
         if (node) {
@@ -196,7 +198,6 @@ class treap {
             }
         }
     }
-
     // Iterators
  public:
     class iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
@@ -224,103 +225,58 @@ class treap {
         T *operator->() const { return &(static_cast<Node<T> *>(current)->data); }
 
         const iterator &operator++(int) {
-            iterator old = *this;
+            iterator result = *this;
             ++(*this);
-            return old;
+            return result;
         }
 
         const iterator &operator--(int) {
-            iterator result(*this);
+            iterator result = *this;
             --(*this);
             return result;
         }
 
         iterator &operator++() {
-            if (current == nullptr) {
-                return *this;
-            }
-            Node<T> *n;
-            if (current->left != nullptr) {
-                /* '-> has left child node -> visit always */
-                current = current->left;
-            } else if (current->right != nullptr) {
-                /* '-> only right child node -> visit always */
-                current = current->right;
-            } else {
-                n = current;
-                while (true) {
-                    /* '-> traverse back until node with unvisited right neighbor or root */
-                    if (n->parent == nullptr) {
-                        current = nullptr;
-                        break;
-                    } else if (n == n->parent->left && n->parent->right != nullptr) {
-                        current = n->parent->right;
-                        break;
-                    } else {
-                        n = n->parent;
-                    }
-                }
-            }
+            Increment();
             return *this;
         }
 
         iterator &operator--() {
+            Decrement();
+            return *this;
         }
 
         void Increment() {
-            if (current == nullptr) {
-                return;
-            }
-            // now we have a valid navigator
-            if (current.HasRightChild())
-                // slide down the left subtree of right child
-            {
-                current++;
-                while (current.HasLeftChild())
-                    +current;
-            } else
-                // back up to first ancestor not already visited
-                // as long as we are parent's right child, then parent has been visited
-            {
-                bool navWasRightChild;
-                do {
-                    navWasRightChild = current.IsRightChild();
-                    --current;
-                } while (navWasRightChild);
+            if (current->right != 0) {
+                current = current->right;
+                while (current->left != 0)
+                    current = current->left;
+            } else {
+                Node<T> *ptr = current->parent;
+                while (current == ptr->right) {
+                    current = ptr;
+                    ptr = ptr->parent;
+                }
+                if (current->right != ptr)
+                    current = ptr;
             }
         }
 
         void Decrement() {
-            if (current) {
-                // note: -- on first element is undefined => we may safely move up if not left
-                if (current == current->parent->arg_first()) {
-                    // current is first child => move up
-                    current = current->parent;
-                } else {
-                    // current is not first child => move up one step, then traverse down
-                    // find pointer from parent
-                    auto prev = --current->parent->arg_end();
-                    for (; *prev != current; --prev);
-                    --prev; // previous from current (prev can't be argv.front())
-                    current = *prev;
-                    // Now traverse down right most
-                    while (!current->is_leaf()) current = current->arg_last();
-                }
+            if (current->left != 0) {
+                Node<T> *ptr = current->left;
+                while (ptr->right != 0)
+                    ptr = ptr->right;
+                current = ptr;
             } else {
-                // current at end, so we need to use root to get to last element
-                for (current = root; !current->is_leaf();) {
-                    current = current->arg_last();
+                Node<T> *ptr = current->parent;
+                while (current == ptr->left) {
+                    current = ptr;
+                    ptr = ptr->parent;
                 }
+                current = ptr;
             }
-            return *this;
         }
-
-        bool HasRightChild() const {
-            if (current && current->right != 0)
-                return 1;
-            return 0;
-        }
-
     };
 
     iterator begin() noexcept {
@@ -334,4 +290,5 @@ class treap {
     iterator end() noexcept {
         return iterator(nullptr);
     }
-}
+
+};

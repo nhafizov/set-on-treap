@@ -12,10 +12,11 @@ int main() {
     treap2.insert(60);
     treap2.insert(80);
     auto it = treap2.begin();
-    while (++it != treap2.end()) {
-        std::cout << *it << "\n";
-    }
-    treap2.inOrder();
+    (it);
+//    std::cout << *--it;
+    std::cout << *it;
+
+//    treap2.inOrder();
     return 0;
 }
 //        80

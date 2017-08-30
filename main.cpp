@@ -3,20 +3,7 @@
 #include "test.h"
 
 int main() {
-    treap<int> treap2;
-    treap2.insert(50);
-    treap2.insert(30);
-    treap2.insert(20);
-    treap2.insert(40);
-    treap2.insert(70);
-    treap2.insert(60);
-    treap2.insert(80);
-    auto it = treap2.begin();
-    (it);
-//    std::cout << *--it;
-    std::cout << *it;
-
-//    treap2.inOrder();
+    test_iterators();
     return 0;
 }
 //        80

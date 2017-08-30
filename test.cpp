@@ -66,9 +66,22 @@ void test_iterators() {
     treap<int> treap2;
     treap2.insert(50);
     treap2.insert(30);
-
-//    while(treap2.begin() != treap2.end()) {
-//        std::cout << ++*treap2.begin();
-//    }
-    std::cout << ++*treap2.begin();
+    treap2.insert(20);
+    treap2.insert(40);
+    treap2.insert(70);
+    treap2.insert(60);
+    treap2.insert(80);
+    std::cout << "++iterator\n";
+    auto it = treap2.begin();
+    while (it != treap2.end()) {
+        std::cout << *it;
+        ++it;
+    }
+    std::cout << "\n--iterator\n";
+    while (it != treap2.begin()) {
+        std::cout << *it;
+        --it;
+    }
+    std::cout << "\nin-order\n";
+    treap2.inOrder();
 }

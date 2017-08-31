@@ -1,47 +1,68 @@
+#pragma once
+
 #include <initializer_list>
 #include <memory>
 #include "treap.h"
 #include <set>
+#include <algorithm>
 
-#pragma once
+template<typename T>
+class treap;
 
 template<typename T, class Compare = std::less<T>>
 class my_set {
  private:
-    treap<T> treap;
+    treap<T> _treap;
     size_t _size = 0;
 
+ protected:
+    Compare comp;
+
  public:
-    // member types
+    /* member types */
     using key_type = T;
     using value_type = T;
-    using iterator = std::iterator<std::bidirectional_iterator_tag, T>;
-    using const_iterator = std::iterator<std::bidirectional_iterator_tag, const T>;
+    using key_compare = Compare;
+    using value_compare = Compare;
+    typedef typename treap<T>::iterator iterator;
+    typedef typename treap<T>::const_iterator const_iterator;
 
-    // member functions
-    my_set() {}
+    /* member functions */
+    explicit my_set(const Compare &comp = Compare()) {}
 
-    explicit my_set(const my_set &other) : treap(other.treap) {}
-
-    explicit my_set(my_set &&other) {
-        treap.root = other.treap.root;
-        _size = other._size;
-        other._size = 0;
-        other.treap.root = nullptr;
+    template<typename InputIt>
+    my_set(InputIt first, InputIt last, const Compare &comp = Compare()) {
+        while (first != last) {
+            _treap.insert(*first);
+            ++first;
+        }
     }
 
-    ~my_set() {
-        clear();
+    explicit my_set(const my_set &other) : _treap(other._treap), comp(other.comp) {}
+
+    explicit my_set(my_set &&other) : comp(other.comp) {
+        std::swap(_treap.root, other._treap.root);
+        std::swap(_size, other._size);
     }
+
+    my_set(std::initializer_list<value_type> init, const Compare &comp = Compare()) {
+        for (auto it = init.begin(); it != init.end(); ++it) {
+            _treap.insert(*it);
+        }
+    }
+
+    ~my_set() {}
 
     my_set &operator=(const my_set &other) {
-        treap = other.treap;
+        clear();
+        _treap = other._treap;
         return *this;
     }
 
     my_set &operator=(my_set &&other) {
-        treap.root = other.treap.root;
-        other.treap.root = nullptr;
+        clear();
+        _treap.root = other._treap.root;
+        other._treap.root = nullptr;
         return *this;
     }
 
@@ -53,24 +74,32 @@ class my_set {
 
     // iterators
     iterator begin() noexcept {
-        return treap.begin();
+        return _treap.begin();
     }
 
-    const_iterator begin() const noexcept;
+    const_iterator begin() const noexcept {
+        return _treap.begin();
+    }
 
-    const_iterator cbegin() const noexcept;
+    const_iterator cbegin() const noexcept {
+        return _treap.begin();
+    }
 
     iterator end() noexcept {
-        return treap.end();
+        return _treap.end();
     }
 
-    const_iterator end() const noexcept;
+    const_iterator end() const noexcept {
+        return _treap.end();
+    }
 
-    const_iterator cend() const noexcept;
+    const_iterator cend() const noexcept {
+        return _treap.end();
+    }
 
     // capacity
     bool empty() const noexcept {
-        return treap.root;
+        return _treap.root == nullptr;
     }
 
     size_t size() const noexcept {
@@ -80,95 +109,149 @@ class my_set {
     // modifiers
     void clear() noexcept {
         _size = 0;
-        treap.clear();
+        _treap.clear();
     };
 
     std::pair<iterator, bool> insert(const value_type &value) {
-        ++_size;
-        return treap.insert(value);
-    }
-
-    std::pair<iterator, bool> insert(value_type &&value) {
-        ++_size;
-        return treap.insert(std::move(value));
-    };
-
-    iterator insert(const_iterator hint, const value_type &value) {}
-
-    iterator insert(const_iterator hint, value_type &&value);
-
-    template<class InputIt>
-    void insert(InputIt first, InputIt last) {
-        while (first++ != last)
-            treap.insert(*first);
-    }
-
-    void insert(std::initializer_list<value_type> ilist) {
-        treap.insert(ilist.begin(), ilist.end());
-    }
-
-    iterator erase(const_iterator pos) {
-        treap.erase(pos);
-    }
-
-    iterator erase(const_iterator first, const_iterator last) {
-        while (first++ != last) {
-            treap.erase(first);
+        auto cnt = _treap.search(value);
+        if (cnt) {
+            return std::make_pair(iterator(cnt), false);
+        } else {
+            ++_size;
+            return std::make_pair(iterator(_treap.insert(value)), true);
         }
     }
 
-    size_t erase(const key_type &key);
+    std::pair<iterator, bool> insert(value_type &&value) {
+        auto cnt = _treap.search(value);
+        if (cnt) {
+            return std::make_pair(iterator(cnt), false);
+        } else {
+            ++_size;
+            return std::make_pair(iterator(_treap.insert(value)), true);
+        }
+    };
+
+    // fix
+    iterator insert(const_iterator hint, const value_type &value) {
+        return iterator(_treap.insert(value));
+    }
+
+    // fix
+    iterator insert(const_iterator hint, value_type &&value) {
+
+        return iterator(_treap.insert(value));
+    }
+
+    template<class InputIt>
+    void insert(InputIt first, InputIt last) {
+        while (first != last) {
+            _treap.insert(*first);
+            ++first;
+        }
+    }
+
+    void insert(std::initializer_list<value_type> ilist) {
+        _treap.insert(ilist.begin(), ilist.end());
+    }
+
+    iterator erase(const_iterator pos) {
+        Node<T> *cnt = pos.current;
+        iterator smth = iterator(cnt);
+        ++smth;
+        _treap.erase(pos.current->data);
+        return smth;
+    }
+
+    iterator erase(const_iterator first, const_iterator last) {
+        while (first != last) {
+            _treap.erase(first);
+            ++first;
+        }
+        return iterator(last.current);
+    }
+
+    //fix
+    size_t erase(const key_type &key) {
+        auto flag = _treap.search(key);
+        if (!flag) {
+            return 0;
+        } else {
+            _treap.erase(key);
+            return 1;
+        }
+        _treap.erase(key);
+    }
 
     void swap(my_set &other) {
-        std::swap(treap.root, other.treap.root);
+        auto cmp = _treap.root;
+        _treap.root = other._treap.root;
+        other._treap.root = cmp;
     }
 
     // lookup
-    size_t count(const T &key) const {
-        return 1 ? treap.search(key) != nullptr : 0;
+    int count(const T &key) {
+        auto smth = _treap.search(key);
+        return 1 ? !smth || !smth->data != nullptr : 0;
     }
 
-    iterator find(const T &key) {}
+    iterator find(const T &key) {
+        return iterator(_treap.search(key));
+    }
 
-    const_iterator find(const T &key) const;
+    const_iterator find(const T &key) const {
+        return const_iterator(_treap.search(key));
+    }
 
-    std::pair<iterator, iterator> equal_range(const T &key);
+    std::pair<iterator, iterator> equal_range(const T &key) {
+        return std::equal_range(begin(), end(), key);
+    };
 
-    std::pair<const_iterator, const_iterator> equal_range(const T &key) const;
+    std::pair<const_iterator, const_iterator> equal_range(const T &key) const {
+        return std::equal_range(cbegin(), cend(), key);
+    };
 
-    iterator lower_bound(const T &key);
+    iterator lower_bound(const T &key) {
+        return std::lower_bound(begin(), end(), key);
+    }
 
-    const_iterator lower_bound(const T &key) const;
+    const_iterator lower_bound(const T &key) const {
+        return std::lower_bound(cbegin(), cend(), key);
+    }
 
-    iterator upper_bound(const T &key);
+    iterator upper_bound(const T &key) {
+        return std::lower_bound(begin(), end(), key);
+    }
 
-    const_iterator upper_bound(const T &key) const;
+    const_iterator upper_bound(const T &key) const {
+        return std::lower_bound(cbegin(), cend(), key);
+    }
 
     // observers
-    /*
-    key_compare key_comp() const;
+    key_compare key_comp() const {
+        return comp;
+    }
 
-    std::set::value_compare value_comp() const;
-    */
+    value_compare value_comp() const {
+        return comp;
+    }
 };
 
 // non-member functions
 template<class Key, class Compare>
 bool operator==(const my_set<Key, Compare> &lhs,
                 const my_set<Key, Compare> &rhs) {
-    return lhs.treap.root == rhs.treap.root;
 };
 
 template<class Key, class Compare, class Alloc>
 bool operator!=(const my_set<Key, Compare> &lhs,
                 const my_set<Key, Compare> &rhs) {
-    return lhs.treap.root != rhs.treap.root;
+    return lhs._treap.root != rhs._treap.root;
 };
 
 template<class Key, class Compare>
 bool operator<(const my_set<Key, Compare> &lhs,
                const my_set<Key, Compare> &rhs) {
-
 };
 
 template<class Key, class Compare>
@@ -188,3 +271,14 @@ void swap(my_set<Key, Compare> &lhs,
           my_set<Key, Compare> &rhs) {
     lhs.swap(rhs);
 };
+
+template<typename T>
+std::ostream &operator<<(std::ostream &out, const my_set<T> &other) {
+    auto it = other.begin();
+    while (it != other.end()) {
+        out << *it << " ";
+        ++it;
+    }
+    out << "\n\n";
+    return out;
+}

@@ -1,9 +1,11 @@
+#pragma once
+
 #include <cstddef>
 #include <random>
 #include <iostream>
 #include <stack>
-// Добавить insert(begin, end);
-#pragma once
+// Добавить итератор end();
+
 
 const size_t mod = 32416187567;
 
@@ -21,23 +23,11 @@ struct Node {
 
     Node(Node *other) : data(other->data), prior(other->prior), left(other->left), right(other->right) {}
 
-    static Node<T> *_S_minimum(Node<T> *__x) {
-        while (__x->left != 0) __x = __x->left;
-        return __x;
-    }
-
-    static Node<T> *_S_maximum(Node<T> *__x) {
-        while (__x->right != 0) __x = __x->right;
-        return __x;
-    }
 };
 
 template<typename T>
 class treap {
  private:
-    Node<T> *root = nullptr;
-    Node<T> *last = nullptr;
-
     static void destroyNode(Node<T> *node) {
         if (node) {
             destroyNode(node->left);
@@ -46,36 +36,50 @@ class treap {
         }
     }
 
+    static Node<T> *minimum(Node<T> *__x) {
+        while (__x->left) __x = __x->left;
+        return __x;
+    }
+
+    static Node<T> *maximum(Node<T> *__x) {
+        while (__x->right) __x = __x->right;
+        return __x;
+    }
+
  public:
+    Node<T> *root = nullptr;
+
     treap() {
     }
 
     explicit treap(const treap &other) {
         copy(other);
+        inOrderParentProblem(root, nullptr);
     }
 
     treap &operator=(const treap &other) {
         clear();
         copy(other);
+        inOrderParentProblem(root, nullptr);
         return *this;
     }
 
     Node<T> *search(Node<T> *_root, const T &data) {
         if (!_root || root->data == data)
             return _root;
-
         if (_root->data < data)
             return search(_root->right, data);
-
         return search(_root->left, data);
     }
 
-    void insert(Node<T> *&_root, Node<T> *elem) {
+    Node<T> *insert(Node<T> *&_root, Node<T> *elem) {
         if (!_root) {
             _root = elem;
+            return _root;
         } else if (elem->prior > _root->prior) {
             split(_root, elem->data, elem->left, elem->right);
             _root = elem;
+            return _root;
         } else {
             insert(elem->data < _root->data ? _root->left : _root->right, elem);
         }
@@ -87,15 +91,6 @@ class treap {
             _root->parent = __root;
             inOrderParentProblem(_root->right, _root);
         }
-    }
-
-    void updateLast() {
-        auto cnt = root;
-        while (cnt && cnt->right) {
-            cnt = cnt->right;
-        }
-        if (last && last->parent)
-            last->parent = cnt;
     }
 
     void split(Node<T> *_root, T &data, Node<T> *&left, Node<T> *&right) {
@@ -152,13 +147,27 @@ class treap {
     }
 
     // useful functions implementation
-    void insert(const T &data) {
+    Node<T> *insert(const T &data) {
         Node<T> *_elem = new Node<T>(data);
-        insert(root, _elem);
+        auto cnt = insert(root, _elem);
         inOrderParentProblem(root, nullptr);
+        return cnt;
+    }
+
+    template<typename inputIt>
+    void insert(inputIt begin, inputIt end) {
+        while (begin != end) {
+            insert(*begin);
+            ++begin;
+        }
+        insert(*end);
     }
 
     Node<T> *search(const T &data) {
+        return search(root, data);
+    }
+
+    Node<T> *search(const T &data) const {
         return search(root, data);
     }
 
@@ -318,9 +327,9 @@ class treap {
 
         bool operator!=(const_iterator const &other) const { return current != other.current; }
 
-        const T &operator*() const { return (static_cast<Node<T> *>(current))->data; }
+        const T &operator*() const { return (current)->data; }
 
-        const T &operator->() const { return (&(static_cast<Node<T> *>(current))->data); }
+        const T &operator->() const { return &(current)->data; }
 
         const const_iterator operator++(int) {
             const_iterator result = *this;
@@ -409,4 +418,5 @@ class treap {
         }
         return const_iterator(cnt);
     }
+
 };

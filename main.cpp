@@ -1,9 +1,10 @@
 #include <iostream>
 #include "treap.h"
 #include "test.h"
+#include "my_set.h"
 
 int main() {
-    test_iterators();
+    test_set();
     return 0;
 }
 //        80

@@ -24,25 +24,6 @@ struct Node {
 
 template<typename T>
 class treap {
- private:
-    static void destroyNode(Node<T> *node) {
-        if (node) {
-            destroyNode(node->left);
-            destroyNode(node->right);
-            delete node;
-        }
-    }
-
-    static Node<T> *minimum(Node<T> *__x) {
-        while (__x->left) __x = __x->left;
-        return __x;
-    }
-
-    static Node<T> *maximum(Node<T> *__x) {
-        while (__x && __x->right) __x = __x->right;
-        return __x;
-    }
-
  public:
     Node<T> *last = new Node<T>(42);
     Node<T> *root = nullptr;
@@ -59,6 +40,10 @@ class treap {
         copy(other);
         inOrderParentProblem(root, nullptr);
         return *this;
+    }
+
+    ~treap() {
+        clear();
     }
 
     Node<T> *search(Node<T> *_root, const T &data) {
@@ -88,42 +73,6 @@ class treap {
         } else {
             insert(elem->data < _root->data ? _root->left : _root->right, elem);
         }
-    }
-
-    void inOrderParentProblem(Node<T> *_root, Node<T> *__root) {
-        if (_root && _root != last) {
-            inOrderParentProblem(_root->left, _root);
-            _root->parent = __root;
-            inOrderParentProblem(_root->right, _root);
-        }
-    }
-
-    void preUpdateLast() {
-        auto cnt = root;
-        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
-        if (cnt) cnt->right = nullptr;
-        last->parent = nullptr;
-    }
-
-    void updateLast() {
-        auto cnt = root;
-        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
-        if (cnt) cnt->right = last;
-        last->parent = cnt;
-    }
-
-    void preUpdateLast() const {
-        auto cnt = root;
-        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
-        if (cnt) cnt->right = nullptr;
-        last->parent = nullptr;
-    }
-
-    void updateLast() const {
-        auto cnt = root;
-        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
-        if (cnt) cnt->right = last;
-        last->parent = cnt;
     }
 
     void split(Node<T> *_root, T &data, Node<T> *&left, Node<T> *&right) {
@@ -175,10 +124,6 @@ class treap {
         }
     }
 
-    ~treap() {
-        clear();
-    }
-
     // useful functions implementation
     Node<T> *insert(const T &data) {
         Node<T> *_elem = new Node<T>(data);
@@ -214,14 +159,6 @@ class treap {
 
     void clear() {
         destroyNode(root);
-    }
-
-    void merge(Node<T> *&left, Node<T> *&right) {
-        merge(root, left, right);
-    }
-
-    void split(T &data, Node<T> *&left, Node<T> *&right) {
-        split(root, data, left, right);
     }
 
     void inOrder(Node<T> *_root) {
@@ -262,6 +199,7 @@ class treap {
             }
         }
     }
+
     // Iterators
  public:
     class iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
@@ -331,7 +269,7 @@ class treap {
         }
 
         void Decrement() {
-            if (current->left != 0 || (_end && current != _end)) {
+            if (current->left != 0 && (_end && current != _end)) {
                 Node<T> *ptr = current->left;
                 while (ptr->right != 0)
                     ptr = ptr->right;
@@ -477,5 +415,50 @@ class treap {
         if (cnt && cnt->right) cnt->right = last;
         if (root) return const_iterator(last, last);
         else return const_iterator(cnt, root);
+    }
+
+ private:
+    static void destroyNode(Node<T> *node) {
+        if (node) {
+            destroyNode(node->left);
+            destroyNode(node->right);
+            delete node;
+        }
+    }
+
+    void preUpdateLast() {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = nullptr;
+        last->parent = nullptr;
+    }
+
+    void updateLast() {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = last;
+        last->parent = cnt;
+    }
+
+    void preUpdateLast() const {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = nullptr;
+        last->parent = nullptr;
+    }
+
+    void updateLast() const {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = last;
+        last->parent = cnt;
+    }
+
+    void inOrderParentProblem(Node<T> *_root, Node<T> *__root) {
+        if (_root && _root != last) {
+            inOrderParentProblem(_root->left, _root);
+            _root->parent = __root;
+            inOrderParentProblem(_root->right, _root);
+        }
     }
 };

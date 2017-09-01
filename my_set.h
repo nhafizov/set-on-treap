@@ -43,6 +43,7 @@ class my_set {
     explicit my_set(my_set &&other) : comp(other.comp) {
         std::swap(_treap.root, other._treap.root);
         std::swap(_size, other._size);
+        std::swap(_treap.last, other._treap.last);
     }
 
     my_set(std::initializer_list<value_type> init, const Compare &comp = Compare()) {

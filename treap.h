@@ -4,8 +4,6 @@
 #include <random>
 #include <iostream>
 #include <stack>
-// Добавить итератор end();
-
 
 const size_t mod = 32416187567;
 
@@ -22,7 +20,6 @@ struct Node {
     Node(T _data, size_t _prior = ((rand() << 15) + rand()) % mod) : data(_data), prior(_prior) {}
 
     Node(Node *other) : data(other->data), prior(other->prior), left(other->left), right(other->right) {}
-
 };
 
 template<typename T>
@@ -42,15 +39,15 @@ class treap {
     }
 
     static Node<T> *maximum(Node<T> *__x) {
-        while (__x->right) __x = __x->right;
+        while (__x && __x->right) __x = __x->right;
         return __x;
     }
 
  public:
+    Node<T> *last = new Node<T>(42);
     Node<T> *root = nullptr;
 
-    treap() {
-    }
+    treap() {}
 
     explicit treap(const treap &other) {
         copy(other);
@@ -72,6 +69,14 @@ class treap {
         return search(_root->left, data);
     }
 
+    Node<T> *search(Node<T> *_root, const T &data) const {
+        if (!_root || root->data == data)
+            return _root;
+        if (_root->data < data)
+            return search(_root->right, data);
+        return search(_root->left, data);
+    }
+
     Node<T> *insert(Node<T> *&_root, Node<T> *elem) {
         if (!_root) {
             _root = elem;
@@ -86,11 +91,39 @@ class treap {
     }
 
     void inOrderParentProblem(Node<T> *_root, Node<T> *__root) {
-        if (_root) {
+        if (_root && _root != last) {
             inOrderParentProblem(_root->left, _root);
             _root->parent = __root;
             inOrderParentProblem(_root->right, _root);
         }
+    }
+
+    void preUpdateLast() {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = nullptr;
+        last->parent = nullptr;
+    }
+
+    void updateLast() {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = last;
+        last->parent = cnt;
+    }
+
+    void preUpdateLast() const {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = nullptr;
+        last->parent = nullptr;
+    }
+
+    void updateLast() const {
+        auto cnt = root;
+        while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
+        if (cnt) cnt->right = last;
+        last->parent = cnt;
     }
 
     void split(Node<T> *_root, T &data, Node<T> *&left, Node<T> *&right) {
@@ -149,8 +182,10 @@ class treap {
     // useful functions implementation
     Node<T> *insert(const T &data) {
         Node<T> *_elem = new Node<T>(data);
+        preUpdateLast();
         auto cnt = insert(root, _elem);
         inOrderParentProblem(root, nullptr);
+        updateLast();
         return cnt;
     }
 
@@ -160,7 +195,6 @@ class treap {
             insert(*begin);
             ++begin;
         }
-        insert(*end);
     }
 
     Node<T> *search(const T &data) {
@@ -172,8 +206,10 @@ class treap {
     }
 
     void erase(const T &data) {
+        preUpdateLast();
         erase(root, data);
         inOrderParentProblem(root, nullptr);
+        updateLast();
     }
 
     void clear() {
@@ -189,15 +225,15 @@ class treap {
     }
 
     void inOrder(Node<T> *_root) {
-        if (_root) {
+        if (_root && _root != last) {
             inOrder(_root->left);
             std::cout << "key: " << _root->data << " | priority: %d "
                       << _root->prior;
-            if (_root->parent)
+            if (_root->parent && _root->parent != last)
                 std::cout << " | parent: " << _root->parent->data;
-            if (_root->left)
+            if (_root->left && _root->left != last)
                 std::cout << " | left child: " << _root->left->data;
-            if (_root->right)
+            if (_root->right && _root->right != last)
                 std::cout << " | right child: " << _root->right->data;
             std::cout << "\n";
             inOrder(_root->right);
@@ -230,17 +266,21 @@ class treap {
  public:
     class iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
      public:
-        Node<T> *current;
+        Node<T> *current = nullptr;
+        Node<T> *_end = nullptr;
+        Node<T> *nil = nullptr;
 
      public:
         iterator() {}
 
-        iterator(Node<T> *node) : current(node) {
-        }
+        iterator(Node<T> *node) : current(node) {}
+
+        iterator(Node<T> *node, Node<T> *&__end) : current(node), _end(__end) {}
 
         iterator &operator=(const iterator &other) {
             std::move(current);
             current = new Node<T>(other.current);
+            _end = other._end;
             return *this;
         }
 
@@ -248,9 +288,9 @@ class treap {
 
         bool operator!=(iterator const &other) const { return current != other.current; }
 
-        T &operator*() { return (static_cast<Node<T> *>(current))->data; }
+        T &operator*() { return current != _end ? (static_cast<Node<T> *>(current))->data : nil->data; }
 
-        T *operator->() { return (&(static_cast<Node<T> *>(current))->data); }
+        T *operator->() { return current != _end ? (&(static_cast<Node<T> *>(current))->data) : nil->data; }
 
         iterator operator++(int) {
             iterator result(*this);
@@ -291,7 +331,7 @@ class treap {
         }
 
         void Decrement() {
-            if (current->left != 0) {
+            if (current->left != 0 || (_end && current != _end)) {
                 Node<T> *ptr = current->left;
                 while (ptr->right != 0)
                     ptr = ptr->right;
@@ -310,16 +350,21 @@ class treap {
  public:
     class const_iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
      public:
-        Node<T> *current;
+        Node<T> *current = nullptr;
+        Node<T> *_end = nullptr;
+        Node<T> *nil = nullptr;
 
      public:
         const_iterator() {}
 
         const_iterator(Node<T> *node) : current(node) {}
 
+        const_iterator(Node<T> *node, Node<T> *__end) : current(node), _end(__end) {}
+
         const_iterator &operator=(const iterator &other) {
             std::move(current);
             current = new Node<T>(other.current);
+            _end = other._end;
             return *this;
         }
 
@@ -327,9 +372,9 @@ class treap {
 
         bool operator!=(const_iterator const &other) const { return current != other.current; }
 
-        const T &operator*() const { return (current)->data; }
+        const T &operator*() const { return current != _end ? (current)->data : nil->data; }
 
-        const T &operator->() const { return &(current)->data; }
+        const T &operator->() const { return current != _end ? &(current)->data : nil->data; }
 
         const const_iterator operator++(int) {
             const_iterator result = *this;
@@ -360,6 +405,7 @@ class treap {
                     current = current->left;
             } else {
                 Node<T> *ptr = current->parent;
+                if (!ptr) return;
                 while (current == ptr->right) {
                     current = ptr;
                     ptr = ptr->parent;
@@ -370,7 +416,7 @@ class treap {
         }
 
         void Decrement() {
-            if (current->left != 0) {
+            if (current->left != 0 || (_end && current != _end)) {
                 Node<T> *ptr = current->left;
                 while (ptr->right != 0)
                     ptr = ptr->right;
@@ -391,7 +437,10 @@ class treap {
         while (cnt && cnt->left) {
             cnt = cnt->left;
         }
-        return iterator(cnt);
+        preUpdateLast();
+        updateLast();
+        if (root) return iterator(cnt, last);
+        else return iterator(cnt, root);
     }
 
     iterator end() noexcept {
@@ -399,7 +448,11 @@ class treap {
         while (cnt && cnt->right) {
             cnt = cnt->right;
         }
-        return iterator(cnt);
+        preUpdateLast();
+        updateLast();
+        if (cnt && cnt->right) cnt->right = last;
+        if (root) return iterator(last, last);
+        else return iterator(root, root);
     }
 
 
@@ -408,7 +461,10 @@ class treap {
         while (cnt && cnt->left) {
             cnt = cnt->left;
         }
-        return const_iterator(cnt);
+        preUpdateLast();
+        updateLast();
+        if (root) return const_iterator(cnt, last);
+        else return const_iterator(cnt, root);
     }
 
     const_iterator end() const noexcept {
@@ -416,7 +472,10 @@ class treap {
         while (cnt && cnt->right) {
             cnt = cnt->right;
         }
-        return const_iterator(cnt);
+        preUpdateLast();
+        updateLast();
+        if (cnt && cnt->right) cnt->right = last;
+        if (root) return const_iterator(last, last);
+        else return const_iterator(cnt, root);
     }
-
 };

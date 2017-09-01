@@ -80,8 +80,8 @@ void test_iterators() {
     }
     std::cout << "\n--iterator\n";
     while (it != treap2.begin()) {
-        std::cout << *it;
         --it;
+        std::cout << *it;
     }
     std::cout << "\nin-order\n";
     treap2.inOrder();

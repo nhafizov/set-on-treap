@@ -4,7 +4,7 @@
 #include "my_set.h"
 
 int main() {
-    test_treap();
+    test_set();
     return 0;
 }
 //        80

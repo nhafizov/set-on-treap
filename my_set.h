@@ -6,6 +6,7 @@
 #include <set>
 #include <algorithm>
 
+// Проблема в clear()
 template<typename T>
 class treap;
 
@@ -13,9 +14,9 @@ template<typename T, class Compare = std::less<T>>
 class my_set {
  private:
     treap<T> _treap;
-    size_t _size = 0;
 
  protected:
+    size_t _size = 0;
     Compare comp;
 
  public:
@@ -31,14 +32,15 @@ class my_set {
     explicit my_set(const Compare &comp = Compare()) {}
 
     template<typename InputIt>
-    my_set(InputIt first, InputIt last, const Compare &comp = Compare()) {
+    my_set(InputIt first, InputIt last, const Compare &comp = Compare()) : comp(comp) {
         while (first != last) {
             _treap.insert(*first);
             ++first;
+            ++_size;
         }
     }
 
-    explicit my_set(const my_set &other) : _treap(other._treap), comp(other.comp) {}
+    explicit my_set(const my_set &other) : _treap(other._treap), comp(other.comp), _size(other._size) {}
 
     explicit my_set(my_set &&other) : comp(other.comp) {
         std::swap(_treap.root, other._treap.root);
@@ -49,31 +51,37 @@ class my_set {
     my_set(std::initializer_list<value_type> init, const Compare &comp = Compare()) {
         for (auto it = init.begin(); it != init.end(); ++it) {
             _treap.insert(*it);
+            ++_size;
         }
     }
 
     ~my_set() {}
 
     my_set &operator=(const my_set &other) {
-        clear();
         _treap = other._treap;
+        _size = other._size;
+        comp = other.comp;
         return *this;
     }
 
     my_set &operator=(my_set &&other) {
-        clear();
         _treap.root = other._treap.root;
+        _treap.last = other._treap.last;
         other._treap.root = nullptr;
+        _size = other._size;
         return *this;
     }
 
     my_set &operator=(std::initializer_list<value_type> ilist) {
         clear();
-        insert(ilist.begin(), ilist.end());
+        for (auto it = ilist.begin(); it != ilist.end(); ++it) {
+            _treap.insert(*it);
+            ++_size;
+        }
         return *this;
     }
 
-    // iterators
+    /* iterators */
     iterator begin() noexcept {
         return _treap.begin();
     }
@@ -98,16 +106,16 @@ class my_set {
         return _treap.end();
     }
 
-    // capacity
+    /* capacity */
     bool empty() const noexcept {
-        return _treap.root == nullptr;
+        return _treap.begin() == _treap.end();
     }
 
     size_t size() const noexcept {
         return _size;
     }
 
-    // modifiers
+    /* modifiers */
     void clear() noexcept {
         _size = 0;
         _treap.clear();
@@ -140,7 +148,6 @@ class my_set {
 
     // fix
     iterator insert(const_iterator hint, value_type &&value) {
-
         return iterator(_treap.insert(value));
     }
 
@@ -275,11 +282,8 @@ void swap(my_set<Key, Compare> &lhs,
 
 template<typename T>
 std::ostream &operator<<(std::ostream &out, const my_set<T> &other) {
-    auto it = other.begin();
-    while (it != other.end()) {
+    for (auto it = other.begin(); it != other.end(); ++it) {
         out << *it << " ";
-        ++it;
     }
-    out << "\n\n";
     return out;
 }

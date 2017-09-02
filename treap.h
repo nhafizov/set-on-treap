@@ -31,19 +31,23 @@ class treap {
     treap() {}
 
     explicit treap(const treap &other) {
+        other.preUpdateLast();
         copy(other);
         inOrderParentProblem(root, nullptr);
     }
 
     treap &operator=(const treap &other) {
         clear();
+        other.preUpdateLast();
         copy(other);
         inOrderParentProblem(root, nullptr);
+        updateLast();
         return *this;
     }
 
     ~treap() {
         clear();
+        delete last;
     }
 
     Node<T> *search(Node<T> *_root, const T &data) {
@@ -158,7 +162,9 @@ class treap {
     }
 
     void clear() {
+        preUpdateLast();
         destroyNode(root);
+        root = nullptr;
     }
 
     void inOrder(Node<T> *_root) {
@@ -182,8 +188,8 @@ class treap {
     }
 
     void copy(const treap &other) {
-        std::vector<Node<T> const *> remaining;
-        Node<T> const *cur = other.root;
+        std::vector<Node<T> *> remaining;
+        Node<T> *cur = other.root;
         while (cur) {
             insert(cur->data);
             if (cur->right) {
@@ -197,6 +203,14 @@ class treap {
                 cur = remaining.back();
                 remaining.pop_back();
             }
+        }
+    }
+
+    void copyByRoot(Node<T> *_root) {
+        if (_root) {
+            copyByRoot(_root->left);
+            insert(_root);
+            copyByRoot(_root->right);
         }
     }
 
@@ -417,15 +431,6 @@ class treap {
         else return const_iterator(cnt, root);
     }
 
- private:
-    static void destroyNode(Node<T> *node) {
-        if (node) {
-            destroyNode(node->left);
-            destroyNode(node->right);
-            delete node;
-        }
-    }
-
     void preUpdateLast() {
         auto cnt = root;
         while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
@@ -452,6 +457,15 @@ class treap {
         while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
         if (cnt) cnt->right = last;
         last->parent = cnt;
+    }
+
+ private:
+    void destroyNode(Node<T> *node) {
+        if (node) {
+            if (node->left) destroyNode(node->left);
+            if (node->right) destroyNode(node->right);
+            delete node;
+        }
     }
 
     void inOrderParentProblem(Node<T> *_root, Node<T> *__root) {

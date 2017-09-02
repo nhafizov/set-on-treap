@@ -12,7 +12,7 @@ void test_treap() {
     treap2.insert(70);
     treap2.insert(60);
     treap2.insert(80);
-
+//    treap2.clear();
     treap<int> treap1;
     treap1 = treap2;
 
@@ -61,6 +61,8 @@ void test_treap() {
     Node<int> *res1 = treap1.search(50);
     (res1 == nullptr) ? std::cout << "\n50 Not Found " :
     std::cout << "\n50 found";
+
+    treap2.clear();
 }
 
 void test_iterators() {
@@ -89,44 +91,70 @@ void test_iterators() {
 
 void test_set() {
     // set1 initialization
-    std::cout << "default constructor test:\n";
+    std::cout << "default constructor test:";
     my_set<int> defSet;
-    std::cout << defSet;
+    std::cout << defSet << "\n\n";
 
     std::cout << "range constructor test:\n";
     std::vector<int> vector = {10, 30, 20, 40, 50, 70, 60, 80, 90};
-    std::cout << "vector elements:\n";
+    std::cout << "vector elements: ";
     for (const auto &it : vector) std::cout << it << " ";
     std::cout << "\n";
     my_set<int> ranSet(vector.begin(), vector.end());
-    std::cout << "set elements after initialization:\n";
-    std::cout << ranSet;
+    std::cout << "set elements after initialization: " << ranSet << "\n\n";
 
     std::cout << "copy constructor test:\n";
     my_set<int> copySet1;
     for (size_t i = 10; i != 100; i += 10) copySet1.insert(i);
-    std::cout << "set to copy:\n";
-    std::cout << copySet1;
-    std::cout << "set elements after initialization:\n";
+    std::cout << "set to copy elements: " << copySet1 << "\n";
     my_set<int> copySet2(copySet1);
-    std::cout << copySet2;
+    std::cout << "set elements after initialization: " << copySet2 << "\n\n";
 
     std::cout << "move constructor test:\n";
     my_set<int> moveSet1;
     for (size_t i = 10; i != 100; i += 10) moveSet1.insert(i);
-    std::cout << "set to copy:\n";
-    std::cout << moveSet1;
-    std::cout << "set elements after initialization:\n";
+    std::cout << "set to move elements: " << moveSet1 << "\n";
     my_set<int> moveSet2(std::move(moveSet1));
-    std::cout << moveSet2;
+    std::cout << "set elements after initialization: " << moveSet2 << "\n\n";
 
     std::cout << "Initializer-list constructor test:\n";
-    my_set<int> initSet = {10, 20, 30, 40, 50, 60, 70, 80, 90};
-    std::cout << initSet;
+    my_set<int> initSet({10, 20, 30, 40, 50, 60, 70, 80, 90});
+    std::cout << "set elements after initialization: " << initSet << "\n\n";
 
     std::cout << "copy assignment operator test:\n";
-    my_set<int> caoSet = {10, 20, 30, 40, 50, 60, 70, 80, 90};
-    std::cout << "set to operator:\n";
+    my_set<int> caoSet1({10, 20, 30, 40, 50, 60, 70, 80, 90});
+    std::cout << "set to copy elements: " << caoSet1 << "\n";
+    my_set<int> caoSet2 = {1, 2, 3};
+    caoSet2 = caoSet1;
+    std::cout << "set elements after operator=: " << caoSet2 << "\n\n";
+
+    std::cout << "Move assignment operator:\n";
+    my_set<int> opMoveSet1 = {10, 20, 30, 40, 50, 60, 70, 80, 90};
+    std::cout << "set to copy elements: " << opMoveSet1 << "\n";
+    my_set<int> opMoveSet2 = {1, 2, 3};
+    opMoveSet2 = std::move(opMoveSet1);
+    std::cout << "set elements after operator= " << opMoveSet2 << "\n\n";
+
+    std::cout << "operator= with initializer list: ";
+    my_set<int> opInitSet1 = {1, 2, 3, 4};
+    std::cout << opInitSet1 << "\n\n";
+
+    std::cout << "capacity test: \n";
+    my_set<int> capEmpty;
+    my_set<int> cap = {1, 2, 3};
+    std::cout << "empty set: " << capEmpty.empty() << "\n";
+    std::cout << "non-empty set: " << cap.empty() << "\n\n";
+
+    std::cout << "size test: \n";
+    std::cout << "empty set: " << capEmpty.size() << "\n";
+    std::cout << "non-empty set: " << caoSet1.size() << "\n\n";
+
+    std::cout << "modifiers: \n";
+    std::cout << "clear function test: \n";
+    my_set<int> clearSet({1, 2, 3, 4, 5, 6});
+    std::cout << "before clear(): " << clearSet << "empty(): " << clearSet.empty() << "\n";
+    clearSet.clear();
+    std::cout << "after clear(): " << clearSet << "empty(): " << clearSet.empty() << "\n\n";
 
 
 //    my_set<int> set1;

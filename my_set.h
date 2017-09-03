@@ -6,14 +6,10 @@
 #include <set>
 #include <algorithm>
 
-// Проблема в clear()
-template<typename T>
-class treap;
-
-template<typename T, class Compare = std::less<T>>
+template<typename T, typename Compare = std::less<T>>
 class my_set {
  private:
-    treap<T> _treap;
+    treap<T, Compare> _treap;
 
  protected:
     size_t _size = 0;
@@ -25,8 +21,8 @@ class my_set {
     using value_type = T;
     using key_compare = Compare;
     using value_compare = Compare;
-    typedef typename treap<T>::iterator iterator;
-    typedef typename treap<T>::const_iterator const_iterator;
+    typedef typename treap<T, Compare>::iterator iterator;
+    typedef typename treap<T, Compare>::const_iterator const_iterator;
 
     /* member functions */
     explicit my_set(const Compare &comp = Compare()) {}
@@ -65,9 +61,10 @@ class my_set {
     }
 
     my_set &operator=(my_set &&other) {
-        _treap.root = other._treap.root;
-        _treap.last = other._treap.last;
-        other._treap.root = nullptr;
+        clear();
+        std::swap(_treap.root, other._treap.root);
+        delete _treap.last;
+        std::swap(_treap.last, other._treap.last);
         _size = other._size;
         return *this;
     }
@@ -160,47 +157,71 @@ class my_set {
     }
 
     void insert(std::initializer_list<value_type> ilist) {
-        _treap.insert(ilist.begin(), ilist.end());
+        for (auto it = ilist.begin(); it != ilist.end(); ++it) _treap.insert(*it);
+    }
+
+    template<class... Args>
+    std::pair<iterator, bool> emplace(Args &&... args) {
+        auto tmp = (new T(std::forward<Args>(args)...));
+        auto cnt = _treap.search(*tmp);
+        if (cnt) {
+            return std::make_pair(iterator(cnt), false);
+        } else {
+            ++_size;
+            return std::make_pair(iterator(_treap.insert(std::move(*tmp))), true);
+        }
+    };
+
+    template<class... Args>
+    iterator emplace_hint(const_iterator hint, Args &&... args) {
+        return iterator(_treap.insert(*(new T(std::forward<Args>(args)...))));
     }
 
     iterator erase(const_iterator pos) {
-        Node<T> *cnt = pos.current;
-        iterator smth = iterator(cnt);
-        ++smth;
-        _treap.erase(pos.current->data);
-        return smth;
+        if (pos != cend()) {
+            Node<T> *cnt = pos.current;
+            iterator smth = iterator(cnt);
+            ++smth;
+            _treap.erase(pos.current->data);
+            return smth;
+        } else {
+            return end();
+        }
     }
 
     iterator erase(const_iterator first, const_iterator last) {
-        while (first != last) {
-            _treap.erase(first);
-            ++first;
+        if (first == cbegin() && last == cend()) {
+            clear();
+            return iterator(last.current, _treap.last);
+        } else {
+            while (first != last) erase(first++);
+            return iterator(first.current);
         }
-        return iterator(last.current);
     }
 
-    //fix
     size_t erase(const key_type &key) {
         auto flag = _treap.search(key);
-        if (!flag) {
+        if (flag) {
             return 0;
         } else {
             _treap.erase(key);
             return 1;
         }
-        _treap.erase(key);
     }
 
     void swap(my_set &other) {
-        auto cmp = _treap.root;
-        _treap.root = other._treap.root;
-        other._treap.root = cmp;
+        std::swap(_treap.root, other._treap.root);
+        std::swap(_treap.last, other._treap.last);
     }
 
-    // lookup
-    int count(const T &key) {
-        auto smth = _treap.search(key);
-        return 1 ? !smth || !smth->data != nullptr : 0;
+    /* lookup */
+    size_t count(const T &key) const {
+        auto flag = _treap.search(key);
+        if (flag) {
+            return 0;
+        } else {
+            return 1;
+        }
     }
 
     iterator find(const T &key) {
@@ -212,27 +233,27 @@ class my_set {
     }
 
     std::pair<iterator, iterator> equal_range(const T &key) {
-        return std::equal_range(begin(), end(), key);
+        return std::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
     };
 
     std::pair<const_iterator, const_iterator> equal_range(const T &key) const {
-        return std::equal_range(cbegin(), cend(), key);
+        return std::pair<const_iterator, const_iterator>(lower_bound(key), upper_bound(key));
     };
 
     iterator lower_bound(const T &key) {
-        return std::lower_bound(begin(), end(), key);
+        return _treap.lower_bound(key);
     }
 
     const_iterator lower_bound(const T &key) const {
-        return std::lower_bound(cbegin(), cend(), key);
+        return _treap.lower_bound(key);
     }
 
     iterator upper_bound(const T &key) {
-        return std::lower_bound(begin(), end(), key);
+        return _treap.upper_bound(key);
     }
 
     const_iterator upper_bound(const T &key) const {
-        return std::lower_bound(cbegin(), cend(), key);
+        return _treap.upper_bound(key);
     }
 
     // observers
@@ -245,34 +266,42 @@ class my_set {
     }
 };
 
-// non-member functions
+/* non-member functions */
 template<class Key, class Compare>
 bool operator==(const my_set<Key, Compare> &lhs,
                 const my_set<Key, Compare> &rhs) {
+    return lhs.size() == rhs.size() && equal(lhs.begin(), lhs.end(), rhs.begin());
 };
 
 template<class Key, class Compare, class Alloc>
 bool operator!=(const my_set<Key, Compare> &lhs,
                 const my_set<Key, Compare> &rhs) {
-    return lhs._treap.root != rhs._treap.root;
+    return !(lhs == rhs);
 };
 
 template<class Key, class Compare>
 bool operator<(const my_set<Key, Compare> &lhs,
                const my_set<Key, Compare> &rhs) {
+    return lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+};
+
+template<class Key, class Compare, class Alloc>
+bool operator>(const my_set<Key, Compare> &lhs,
+               const my_set<Key, Compare> &rhs) {
+    return rhs < lhs;
 };
 
 template<class Key, class Compare>
 bool operator<=(const my_set<Key, Compare> &lhs,
-                const my_set<Key, Compare> &rhs);
-
-template<class Key, class Compare, class Alloc>
-bool operator>(const my_set<Key, Compare> &lhs,
-               const my_set<Key, Compare> &rhs);
+                const my_set<Key, Compare> &rhs) {
+    return !(rhs < lhs);
+};
 
 template<class Key, class Compare, class Alloc>
 bool operator>=(const my_set<Key, Compare> &lhs,
-                const my_set<Key, Compare> &rhs);
+                const my_set<Key, Compare> &rhs) {
+    return !(lhs < rhs);
+};
 
 template<class Key, class Compare, class Alloc>
 void swap(my_set<Key, Compare> &lhs,

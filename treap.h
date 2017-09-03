@@ -22,11 +22,12 @@ struct Node {
     Node(Node *other) : data(other->data), prior(other->prior), left(other->left), right(other->right) {}
 };
 
-template<typename T>
+template<typename T, typename Compare = std::less<T>>
 class treap {
  public:
     Node<T> *last = new Node<T>(42);
     Node<T> *root = nullptr;
+    Compare comp;
 
     treap() {}
 
@@ -47,11 +48,10 @@ class treap {
 
     ~treap() {
         clear();
-        delete last;
     }
 
     Node<T> *search(Node<T> *_root, const T &data) {
-        if (!_root || root->data == data)
+        if (!_root || _root->data == data)
             return _root;
         if (_root->data < data)
             return search(_root->right, data);
@@ -59,7 +59,7 @@ class treap {
     }
 
     Node<T> *search(Node<T> *_root, const T &data) const {
-        if (!_root || root->data == data)
+        if (!_root || _root->data == data)
             return _root;
         if (_root->data < data)
             return search(_root->right, data);
@@ -84,27 +84,10 @@ class treap {
             left = nullptr;
             right = nullptr;
         } else if (data < _root->data) {
-            split(_root->left, data, left, _root->left, _root);
+            split(_root->left, data, left, _root->left);
             right = _root;
         } else {
-            split(_root->right, data, _root->right, right, _root);
-            left = _root;
-        }
-    }
-
-    void split(Node<T> *_root, T &data, Node<T> *&left, Node<T> *&right, Node<T> *__root) {
-        if (!_root) {
-            left = nullptr;
-            right = nullptr;
-        } else if (data < _root->data) {
-            if (left && left->parent)
-                left->parent = __root;
-            split(_root->left, data, left, _root->left, __root);
-            right = _root;
-        } else {
-            if (right && right->parent)
-                right->parent = __root;
-            split(_root->right, data, _root->right, right, __root);
+            split(_root->right, data, _root->right, right);
             left = _root;
         }
     }
@@ -156,7 +139,6 @@ class treap {
 
     void erase(const T &data) {
         preUpdateLast();
-        erase(root, data);
         inOrderParentProblem(root, nullptr);
         updateLast();
     }
@@ -165,6 +147,7 @@ class treap {
         preUpdateLast();
         destroyNode(root);
         root = nullptr;
+        updateLast();
     }
 
     void inOrder(Node<T> *_root) {
@@ -203,14 +186,6 @@ class treap {
                 cur = remaining.back();
                 remaining.pop_back();
             }
-        }
-    }
-
-    void copyByRoot(Node<T> *_root) {
-        if (_root) {
-            copyByRoot(_root->left);
-            insert(_root);
-            copyByRoot(_root->right);
         }
     }
 
@@ -273,6 +248,7 @@ class treap {
                     current = current->left;
             } else {
                 Node<T> *ptr = current->parent;
+                if (!ptr) return;
                 while (current == ptr->right) {
                     current = ptr;
                     ptr = ptr->parent;
@@ -457,6 +433,53 @@ class treap {
         while (cnt && cnt->right && cnt->right != last) cnt = cnt->right;
         if (cnt) cnt->right = last;
         last->parent = cnt;
+    }
+
+    iterator lower_bound(const T &key) {
+        Node<T> *notLessThanKey = (begin()).current;
+        Node<T> *current = root;
+        while (current && current != last)
+            if (!comp(key, current->data))
+                notLessThanKey = current, current = current->right;
+            else
+                current = current->left;
+        if (notLessThanKey && notLessThanKey->data < key) return iterator(notLessThanKey);
+        else return end();
+    }
+
+    const_iterator lower_bound(const T &key) const {
+        Node<T> *LessThanKey = (begin()).current;
+        Node<T> *current = root;
+        while (current && current != last)
+            if (!comp(key, current->data))
+                LessThanKey = current, current = current->right;
+            else
+                current = current->left;
+        if (LessThanKey && LessThanKey->data < key) return const_iterator(LessThanKey);
+        else return end();
+    }
+
+    iterator upper_bound(const T &key) {
+        Node<T> *greaterThanKey = (begin()).current;
+        Node<T> *current = root;
+        while (current && current != last)
+            if (!comp(current->data, key))
+                greaterThanKey = current, current = current->left;
+            else
+                current = current->right;
+        if (greaterThanKey && greaterThanKey->data > key) return iterator(greaterThanKey);
+        else return end();
+    }
+
+    const_iterator upper_bound(const T &key) const {
+        Node<T> *greaterThanKey = (--end()).current;
+        Node<T> *current = root;
+        while (current && current != last)
+            if (comp(key, current->data))
+                greaterThanKey = current, current = current->left;
+            else
+                current = current->right;
+        return const_iterator(greaterThanKey);
     }
 
  private:

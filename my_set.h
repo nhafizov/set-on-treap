@@ -4,7 +4,6 @@
 #include <memory>
 #include "treap.h"
 #include <set>
-#include <algorithm>
 
 template<typename T, typename Compare = std::less<T>>
 class my_set {

@@ -325,6 +325,7 @@ void test_speed() {
         std_set.erase(i);
     std::cout << "std set erase: " << time.getTime() << "\n\n";
 }
+
 /* На 50000
 treap set sequential insert: 39.14
 

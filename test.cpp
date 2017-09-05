@@ -4,7 +4,7 @@
 #include "my_set.h"
 #include "timer.h"
 
-constexpr int test_size = 50000;
+constexpr int test_size = 1000000;
 
 void test_treap() {
     treap<int> treap2;
@@ -15,7 +15,6 @@ void test_treap() {
     treap2.insert(70);
     treap2.insert(60);
     treap2.insert(80);
-//    treap2.clear();
     treap<int> treap1;
     treap1 = treap2;
 
@@ -91,6 +90,16 @@ void test_iterators() {
     std::cout << "\nin-order\n";
     treap2.inOrder();
 }
+
+/*
+key: 20 | priority: %d 266688984 | parent: 30
+key: 30 | priority: %d 1316969908 | parent: 60 | left child: 20 | right child: 50
+key: 40 | priority: %d 272062119 | parent: 50
+key: 50 | priority: %d 1109799209 | parent: 30 | left child: 40
+key: 60 | priority: %d 14167992570 | left child: 30 | right child: 80
+key: 70 | priority: %d 276255807 | parent: 80
+key: 80 | priority: %d 12832447970 | parent: 60 | left child: 70
+ */
 
 void test_set() {
     // set1 initialization
@@ -326,32 +335,32 @@ void test_speed() {
     std::cout << "std set erase: " << time.getTime() << "\n\n";
 }
 
-/* На 50000
-treap set sequential insert: 39.14
+/* На 1000000
+treap set sequential insert: 1.265
 
-std set sequential insert: 0.063
+std set sequential insert: 1.546
 
-treap set iteration: 0
+treap set iteration: 0.047
 
-std set iteration: 0
+std set iteration: 0.047
 
-treap set clear: 0
+treap set clear: 0.125
 
-std set clear: 0.015
+std set clear: 0.156
 
-treap set reverse order insert: 32.313
+treap set reverse order insert: 1.063
 
-std set reverse order insert: 0.047
+std set reverse order insert: 1.578
 
-treap set find: 0
+treap set find: 0.25
 
-std set find: 0.031
+std set find: 0.781
 
-treap set find nearby: 0
+treap set find nearby: 0.234
 
-std set find nearby: 0.015
+std set find nearby: 0.641
 
-treap set erase: 0.016
+treap set erase: 0.203
 
-std set erase: 0.031
+std set erase: 0.985
 */

@@ -20,6 +20,15 @@ struct Node {
     Node(T _data, size_t _prior = ((rand() << 15) + rand()) % mod) : data(_data), prior(_prior) {}
 
     Node(Node *other) : data(other->data), prior(other->prior), left(other->left), right(other->right) {}
+
+    Node &operator=(const Node<T> *&other) {
+        left = other->left;
+        right = other->right;
+        parent = other->parent;
+        data = other->data;
+        prior = other->prior;
+        return *this;
+    }
 };
 
 template<typename T, typename Compare = std::less<T>>
@@ -66,16 +75,13 @@ class treap {
         return search(_root->left, data);
     }
 
-    Node<T> *insert(Node<T> *&_root, Node<T> *elem) {
-        if (!_root) {
-            _root = elem;
-            return _root;
-        } else if (elem->prior > _root->prior) {
-            split(_root, elem->data, elem->left, elem->right);
-            _root = elem;
-            return _root;
-        } else {
-            insert(elem->data < _root->data ? _root->left : _root->right, elem);
+    void update(Node<T> *node) {
+        if (node) {
+            node->parent = nullptr;
+            if (node->left)
+                node->left->parent = node;
+            if (node->right)
+                node->right->parent = node;
         }
     }
 
@@ -90,6 +96,8 @@ class treap {
             split(_root->right, data, _root->right, right);
             left = _root;
         }
+        update(left);
+        update(right);
     }
 
     void erase(Node<T> *&_root, const T &data) {
@@ -109,16 +117,20 @@ class treap {
             merge(right->left, left, right->left);
             _root = right;
         }
+        update(_root);
     }
 
     // useful functions implementation
     Node<T> *insert(const T &data) {
-        Node<T> *_elem = new Node<T>(data);
         preUpdateLast();
-        auto cnt = insert(root, _elem);
-        inOrderParentProblem(root, nullptr);
+        Node<T> *tmp1 = nullptr;
+        Node<T> *tmp2 = nullptr;
+        Node<T> *elem = new Node<T>(data);
+        split(root, elem->data, tmp1, tmp2);
+        merge(tmp1, tmp1, elem);
+        merge(root, tmp1, tmp2);
         updateLast();
-        return cnt;
+        return elem;
     }
 
     template<typename inputIt>
@@ -139,6 +151,7 @@ class treap {
 
     void erase(const T &data) {
         preUpdateLast();
+        erase(root, data);
         inOrderParentProblem(root, nullptr);
         updateLast();
     }
@@ -365,8 +378,6 @@ class treap {
         while (cnt && cnt->left) {
             cnt = cnt->left;
         }
-        preUpdateLast();
-        updateLast();
         if (root) return iterator(cnt, last);
         else return iterator(cnt, root);
     }
@@ -376,21 +387,16 @@ class treap {
         while (cnt && cnt->right) {
             cnt = cnt->right;
         }
-        preUpdateLast();
-        updateLast();
         if (cnt && cnt->right) cnt->right = last;
         if (root) return iterator(last, last);
         else return iterator(root, root);
     }
-
 
     const_iterator begin() const noexcept {
         auto cnt = root;
         while (cnt && cnt->left) {
             cnt = cnt->left;
         }
-        preUpdateLast();
-        updateLast();
         if (root) return const_iterator(cnt, last);
         else return const_iterator(cnt, root);
     }
@@ -400,8 +406,6 @@ class treap {
         while (cnt && cnt->right) {
             cnt = cnt->right;
         }
-        preUpdateLast();
-        updateLast();
         if (cnt && cnt->right) cnt->right = last;
         if (root) return const_iterator(last, last);
         else return const_iterator(cnt, root);

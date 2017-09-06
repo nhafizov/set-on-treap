@@ -364,3 +364,32 @@ treap set erase: 0.203
 
 std set erase: 0.985
 */
+
+/* На 10000000
+treap set sequential insert: 7.765
+
+std set sequential insert: 11.031
+
+treap set iteration: 0.438
+
+std set iteration: 0.328
+
+treap set clear: 1
+
+std set clear: 1.203
+
+treap set reverse order insert: 8.344
+
+std set reverse order insert: 10.937
+
+treap set find: 2.219
+
+std set find: 5.813
+
+treap set find nearby: 2.062
+
+std set find nearby: 5.797
+
+treap set erase: 2.172
+
+std set erase: 9.906 */

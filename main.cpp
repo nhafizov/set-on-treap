@@ -5,5 +5,6 @@
 
 int main() {
     test_speed();
+    test_set();
     return 0;
 }

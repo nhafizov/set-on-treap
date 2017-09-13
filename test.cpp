@@ -3,8 +3,9 @@
 #include "test.h"
 #include "my_set.h"
 #include "timer.h"
+#include <algorithm>
 
-constexpr int test_size = 1000000;
+constexpr int test_size = 10000000;
 
 void test_treap() {
     treap<int> treap2;
@@ -99,7 +100,7 @@ key: 50 | priority: %d 1109799209 | parent: 30 | left child: 40
 key: 60 | priority: %d 14167992570 | left child: 30 | right child: 80
 key: 70 | priority: %d 276255807 | parent: 80
 key: 80 | priority: %d 12832447970 | parent: 60 | left child: 70
- */
+*/
 
 void test_set() {
     // set1 initialization
@@ -267,7 +268,6 @@ void test_speed() {
     for (int i = 0; i < test_size; ++i)
         treap_set.insert(i);
     std::cout << "treap set sequential insert: " << time.getTime() << "\n\n";
-
     std::set<int> std_set;
     time.restart();
     for (int i = 0; i < test_size; ++i)
@@ -364,3 +364,32 @@ treap set erase: 0.203
 
 std set erase: 0.985
 */
+
+/* На 10000000
+treap set sequential insert: 7.765
+
+std set sequential insert: 11.031
+
+treap set iteration: 0.438
+
+std set iteration: 0.328
+
+treap set clear: 1
+
+std set clear: 1.203
+
+treap set reverse order insert: 8.344
+
+std set reverse order insert: 10.937
+
+treap set find: 2.219
+
+std set find: 5.813
+
+treap set find nearby: 2.062
+
+std set find nearby: 5.797
+
+treap set erase: 2.172
+
+std set erase: 9.906 */

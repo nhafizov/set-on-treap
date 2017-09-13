@@ -43,14 +43,13 @@ class treap {
     explicit treap(const treap &other) {
         other.preUpdateLast();
         copy(other);
-        inOrderParentProblem(root, nullptr);
+        updateLast();
     }
 
     treap &operator=(const treap &other) {
         clear();
         other.preUpdateLast();
         copy(other);
-        inOrderParentProblem(root, nullptr);
         updateLast();
         return *this;
     }
